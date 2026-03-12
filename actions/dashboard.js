@@ -2,11 +2,15 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+import { GoogleGenAI } from "@google/genai";
 
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 export const generateAIInsights = async (industry) => {
   const prompt = `
           Analyze the current state of the ${industry} industry and provide insights in ONLY the following JSON format without any additional notes or explanations:
@@ -28,12 +32,33 @@ export const generateAIInsights = async (industry) => {
           Include at least 5 skills and trends.
         `;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+  // const result = await model.generateContent(prompt);
+  // const response = result.response;
+  // const text = response.text();
+  // const result = await ai.models.generateContent({
+  //   model: "gemini-3-flash",
+  //   contents: prompt,
+  // });
+  const result = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+  });
+  
+  const text = result.text;
   const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
 
-  return JSON.parse(cleanedText);
+  const data = JSON.parse(cleanedText);
+
+// Fix enum casing for Prisma
+data.demandLevel = data.demandLevel.toUpperCase();
+data.marketOutlook = data.marketOutlook.toUpperCase();
+
+return data;
 };
 
 export async function getIndustryInsights() {

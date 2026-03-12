@@ -55,7 +55,7 @@ export async function updateUser(data) {
         return { updatedUser, industryInsight };
       },
       {
-        timeout: 10000, // default: 5000
+        timeout: 50000, // default: 5000
       }
     );
 
@@ -63,7 +63,7 @@ export async function updateUser(data) {
     return result.user;
   } catch (error) {
     console.error("Error updating user and industry:", error.message);
-    throw new Error("Failed to update profile");
+    throw new Error("Failed to update profile"+error.message);
   }
 }
 
